@@ -14,12 +14,21 @@ public class CraftingBenchUI : MonoBehaviour
     public TMP_Text recipeCountText;
     public Button closeButton;
 
-    [Header("Day 3B Recipe UI")]
+    [Header("Recipe UI")]
     public Transform recipeListParent;
     public TMP_Text recipeDetailsText;
 
+    [Header("Craft Button")]
+    public Button craftButton;
+    public TMP_Text craftButtonLabel;
+
+    [Header("Feedback")]
+    public TMP_Text craftingFeedbackText;
+
     private CraftingBench activeBench;
     private Inventory activeInventory;
+    private CraftingRecipe selectedRecipe;
+    private bool isCrafting;
 
     private readonly List<GameObject> recipeButtons = new List<GameObject>();
 
@@ -41,10 +50,18 @@ public class CraftingBenchUI : MonoBehaviour
             closeButton.onClick.AddListener(Close);
         }
 
+        if (craftButton)
+        {
+            craftButton.onClick.RemoveAllListeners();
+            craftButton.onClick.AddListener(OnCraftButtonPressed);
+        }
+
         if (panelRoot)
         {
             panelRoot.SetActive(false);
         }
+
+        RefreshCraftButton();
     }
 
     private void Update()
@@ -59,6 +76,7 @@ public class CraftingBenchUI : MonoBehaviour
     {
         activeBench = bench;
         activeInventory = inventory;
+        selectedRecipe = null;
 
         if (!panelRoot)
         {
@@ -71,6 +89,8 @@ public class CraftingBenchUI : MonoBehaviour
         UpdateHeader();
         BuildRecipeList();
         ClearRecipeDetails();
+        SetFeedback("");
+        RefreshCraftButton();
 
         LockGameplay();
     }
@@ -79,6 +99,7 @@ public class CraftingBenchUI : MonoBehaviour
     {
         ClearRecipeButtons();
 
+        selectedRecipe = null;
         activeBench = null;
         activeInventory = null;
 
@@ -87,6 +108,7 @@ public class CraftingBenchUI : MonoBehaviour
             panelRoot.SetActive(false);
         }
 
+        RefreshCraftButton();
         UnlockGameplay();
     }
 
@@ -188,8 +210,12 @@ public class CraftingBenchUI : MonoBehaviour
 
     private void ShowRecipeDetails(CraftingRecipe recipe)
     {
+        selectedRecipe = recipe;
+        SetFeedback("");
+
         if (!recipeDetailsText || !recipe)
         {
+            RefreshCraftButton();
             return;
         }
 
@@ -238,14 +264,114 @@ public class CraftingBenchUI : MonoBehaviour
         }
 
         recipeDetailsText.text = builder.ToString();
+        RefreshCraftButton();
     }
 
     private void ClearRecipeDetails()
     {
+        selectedRecipe = null;
+
         if (recipeDetailsText)
         {
             recipeDetailsText.text = "Select a recipe.";
         }
+
+        RefreshCraftButton();
+    }
+
+    private void RefreshCraftButton()
+    {
+        if (!craftButton)
+        {
+            return;
+        }
+
+        bool canCraft = selectedRecipe && activeInventory && selectedRecipe.CanCraft(activeInventory);
+
+        craftButton.interactable = canCraft;
+
+        Image image = craftButton.GetComponent<Image>();
+
+        if (image)
+        {
+            image.color = canCraft
+                ? new Color(0.08f, 0.28f, 0.12f, 1f)
+                : new Color(0.18f, 0.18f, 0.18f, 1f);
+        }
+
+        if (craftButtonLabel)
+        {
+            craftButtonLabel.text = canCraft ? "Craft" : "Cannot Craft";
+            craftButtonLabel.color = canCraft ? Color.white : new Color(0.65f, 0.65f, 0.65f, 1f);
+        }
+    }
+
+    private void OnCraftButtonPressed()
+    {
+        if (isCrafting)
+        {
+            return;
+        }
+
+        if (!selectedRecipe || !activeInventory)
+        {
+            SetFeedback("No recipe selected.");
+            RefreshCraftButton();
+            return;
+        }
+
+        if (!selectedRecipe.CanCraft(activeInventory))
+        {
+            SetFeedback("Missing ingredients or inventory space.");
+            RefreshCraftButton();
+            ShowRecipeDetails(selectedRecipe);
+            return;
+        }
+
+        isCrafting = true;
+
+        bool crafted = selectedRecipe.TryCraft(activeInventory);
+
+        if (crafted)
+        {
+            string outputName = selectedRecipe.outputItem
+                ? selectedRecipe.outputItem.Name
+                : selectedRecipe.recipeName;
+
+            SetFeedback($"Crafted {outputName} x{selectedRecipe.outputAmount}");
+
+            if (ItemPickUpUI.Instance && selectedRecipe.outputItem)
+            {
+                ItemPickUpUI.Instance.ShowMessage(
+                    $"+{selectedRecipe.outputAmount} {outputName}",
+                    selectedRecipe.outputItem.icon
+                );
+            }
+        }
+        else
+        {
+            SetFeedback("Craft failed.");
+        }
+
+        RefreshAfterCraftAttempt();
+
+        isCrafting = false;
+    }
+
+    private void RefreshAfterCraftAttempt()
+    {
+        BuildRecipeList();
+
+        if (selectedRecipe)
+        {
+            ShowRecipeDetails(selectedRecipe);
+        }
+        else
+        {
+            ClearRecipeDetails();
+        }
+
+        RefreshCraftButton();
     }
 
     private void ClearRecipeButtons()
@@ -295,5 +421,30 @@ public class CraftingBenchUI : MonoBehaviour
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    private void SetFeedback(string message)
+    {
+        if (!craftingFeedbackText)
+        {
+            return;
+        }
+
+        craftingFeedbackText.text = message;
+
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            craftingFeedbackText.color = Color.white;
+            return;
+        }
+
+        if (message.StartsWith("Crafted"))
+        {
+            craftingFeedbackText.color = new Color(0.55f, 1f, 0.6f, 1f);
+        }
+        else
+        {
+            craftingFeedbackText.color = new Color(1f, 0.55f, 0.5f, 1f);
+        }
     }
 }

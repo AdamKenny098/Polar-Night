@@ -12,4 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eddeaaf00c79be94fb92f008a1edb3a4, type: 3}
   m_Name: DemoCraftingRecipeBook
   m_EditorClassIdentifier: 
-  recipes: []
+  recipes:
+  - {fileID: 11400000, guid: a13bf1b11beda6140b99e4dfea6fdcf6, type: 2}
+  - {fileID: 11400000, guid: afb4e92b972a9c24fa7cc228d5050184, type: 2}
+  - {fileID: 11400000, guid: ad03933acad59ea43981ba5855b06df0, type: 2}
+  - {fileID: 11400000, guid: b73a3ed076e9f7d44997cd7188b5030a, type: 2}
