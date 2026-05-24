@@ -3,27 +3,38 @@
 // Date Created: 2025-08-15
 // Description: Manages the generator minigame where players guess a word to maintain the generator.
 
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using TMPro;
-using UnityEngine.UI;
-
+using UnityEngine;
 
 public class GeneratorMinigame : MonoBehaviour
 {
     public static GeneratorMinigame Instance;
+
+    [Header("UI")]
     public TMP_InputField inputField;
     public Transform guessesContainer;
     public GameObject guessRowPrefab;
+
+    [Header("Legacy Word List Fallback")]
     public string[] wordList;
+
+    [Header("Word Database")]
+    public GeneratorWordDatabase wordDatabase;
+    public GeneratorWordCategory[] defaultWordCategories =
+    {
+        GeneratorWordCategory.Mechanical,
+        GeneratorWordCategory.Emergency
+    };
+
     private string targetWord;
     private int maxGuesses = 6;
     private int currentGuess = 0;
     private bool isActive = false;
-    
+
     public bool cancelInput;
 
+    [Header("External References")]
     public GameObject inventoryUI;
     public InteractSystem interactionSystem;
     public GameObject pauseMenu;
@@ -38,23 +49,29 @@ public class GeneratorMinigame : MonoBehaviour
         {
             Destroy(gameObject);
         }
-        
     }
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        inputField.characterLimit = 5;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        if (!isActive) return;
-
-        if (isActive && cancelInput)
+        if (inputField)
         {
-            interactionSystem.enabled = false;
+            inputField.characterLimit = 5;
+        }
+    }
+
+    private void Update()
+    {
+        if (!isActive)
+        {
+            return;
+        }
+
+        if (cancelInput)
+        {
+            if (interactionSystem)
+            {
+                interactionSystem.enabled = false;
+            }
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -63,16 +80,23 @@ public class GeneratorMinigame : MonoBehaviour
 
     public void StartMinigame()
     {
+        targetWord = ChooseTargetWord();
+
+        if (string.IsNullOrWhiteSpace(targetWord))
+        {
+            Debug.LogError("Generator minigame could not find a valid 5-letter word.");
+            return;
+        }
+
         HUDManager.Instance.InventoryLocked = true;
-        
+
         PauseMenu.Instance.SetIsPaused(true);
         cancelInput = true;
         HUDManager.Instance.ShowGeneratorHUD();
-        targetWord = wordList[Random.Range(0, wordList.Length)];
+
         currentGuess = 0;
         isActive = true;
 
-        //erase previous guesses from previous games
         foreach (Transform child in guessesContainer)
         {
             Destroy(child.gameObject);
@@ -84,25 +108,24 @@ public class GeneratorMinigame : MonoBehaviour
 
         inputField.text = "";
         inputField.ActivateInputField();
-
-
     }
 
     public void OnSubmitGuess()
     {
-        string guess = inputField.text.ToUpper();
+        string guess = inputField.text.Trim().ToUpperInvariant();
+
         if (guess.Length != 5)
         {
             return;
         }
-        
+
         GameObject row = Instantiate(guessRowPrefab, guessesContainer);
         TMP_Text[] letters = row.GetComponentsInChildren<TMP_Text>();
 
         for (int i = 0; i < 5; i++)
         {
-            //Tmp.text [i] = word[i].ToString();
             letters[i].text = guess[i].ToString();
+
             if (guess[i] == targetWord[i])
             {
                 letters[i].color = Color.green;
@@ -115,7 +138,6 @@ public class GeneratorMinigame : MonoBehaviour
             {
                 letters[i].color = Color.gray;
             }
-                
         }
 
         currentGuess++;
@@ -132,86 +154,102 @@ public class GeneratorMinigame : MonoBehaviour
         }
     }
 
+    private string ChooseTargetWord()
+    {
+        if (wordDatabase)
+        {
+            string databaseWord = wordDatabase.GetRandomWord(5, defaultWordCategories);
+
+            if (!string.IsNullOrWhiteSpace(databaseWord))
+            {
+                return databaseWord;
+            }
+        }
+
+        List<string> validFallbackWords = new List<string>();
+
+        if (wordList != null)
+        {
+            for (int i = 0; i < wordList.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(wordList[i]))
+                {
+                    continue;
+                }
+
+                string word = wordList[i].Trim().ToUpperInvariant();
+
+                if (word.Length == 5)
+                {
+                    validFallbackWords.Add(word);
+                }
+            }
+        }
+
+        if (validFallbackWords.Count > 0)
+        {
+            return validFallbackWords[Random.Range(0, validFallbackWords.Count)];
+        }
+
+        return "FUSES";
+    }
+
     private void PassMinigame()
     {
-        HUDManager.Instance.ShowDefaultHUD();
-        isActive = false;
+        EndMinigameInputLock();
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-        Time.timeScale = 1f;
-        
         float fuelUse = 5 * GameManager.Instance.fuelUseMult;
         int fuelCost = Mathf.RoundToInt(fuelUse);
 
         if (!FuelStorage.Instance.TryConsumeFuel(fuelCost))
         {
-            // Not enough fuel to pay the penalty, game over
             GameManager.Instance.GameOver();
             return;
         }
-        
+
         GameManager.Instance.AdvanceStage();
         GameManager.Instance.successfulMaintenance++;
 
-        interactionSystem.enabled = true;
-
         GameManager.Instance.hasMaintainedGenerators = true;
         DayStageUI.Instance.UpdateStageDisplay(GameManager.Instance.currentStage);
-
-        PauseMenu.Instance.SetIsPaused(false);
-        HUDManager.Instance.InventoryLocked = false;
     }
 
     private void FailMinigame()
     {
-        HUDManager.Instance.ShowDefaultHUD();
-        isActive = false;
+        EndMinigameInputLock();
 
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-        Time.timeScale = 1f;
+        float fuelUse;
 
         if (GameManager.Instance.UpgradeUnlocked(GameManager.PlayerUpgrade.MaintenancePro))
         {
-            float fuelUse = 15 * GameManager.Instance.fuelPenaltyMult;
-            int fuelCost = Mathf.RoundToInt(fuelUse);
-
-            if (!FuelStorage.Instance.TryConsumeFuel(fuelCost))
-            {
-                // Not enough fuel to pay the penalty, game over
-                GameManager.Instance.GameOver();
-                return;
-            }
-            
+            fuelUse = 15 * GameManager.Instance.fuelPenaltyMult;
         }
-
         else
         {
-            float fuelUse = 20 * GameManager.Instance.fuelPenaltyMult;
-            int fuelCost = Mathf.RoundToInt(fuelUse);
+            fuelUse = 20 * GameManager.Instance.fuelPenaltyMult;
+        }
 
-            if (!FuelStorage.Instance.TryConsumeFuel(fuelCost))
-            {
-                // Not enough fuel to pay the penalty, game over
-                GameManager.Instance.GameOver();
-                return;
-            }
+        int fuelCost = Mathf.RoundToInt(fuelUse);
+
+        if (!FuelStorage.Instance.TryConsumeFuel(fuelCost))
+        {
+            GameManager.Instance.GameOver();
+            return;
         }
 
         GameManager.Instance.AdvanceStage();
 
-        interactionSystem.enabled = true;
-
         GameManager.Instance.hasMaintainedGenerators = true;
         DayStageUI.Instance.UpdateStageDisplay(GameManager.Instance.currentStage);
-
-        PauseMenu.Instance.SetIsPaused(false);
-        HUDManager.Instance.InventoryLocked = false;
     }
 
-
     public void CloseMinigame()
+    {
+        EndMinigameInputLock();
+        DayStageUI.Instance.UpdateStageDisplay(GameManager.Instance.currentStage);
+    }
+
+    private void EndMinigameInputLock()
     {
         cancelInput = false;
 
@@ -222,11 +260,12 @@ public class GeneratorMinigame : MonoBehaviour
         Cursor.visible = false;
         Time.timeScale = 1f;
 
-        interactionSystem.enabled = true;
+        if (interactionSystem)
+        {
+            interactionSystem.enabled = true;
+        }
 
         PauseMenu.Instance.SetIsPaused(false);
         HUDManager.Instance.InventoryLocked = false;
-        
-        DayStageUI.Instance.UpdateStageDisplay(GameManager.Instance.currentStage);
     }
 }

@@ -12,6 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43c0140c974ebec409d0aaf9e6e58f18, type: 3}
   m_Name: Materials
   m_EditorClassIdentifier: 
+  itemId: materials
   Name: Materials
-  maxStack: 5
+  maxStack: 50
   icon: {fileID: 21300000, guid: ec911aaec72305042a19cc12e2ddef87, type: 3}
+  category: 3
+  description: General salvage used for repairs, basic crafting, and shelter maintenance.

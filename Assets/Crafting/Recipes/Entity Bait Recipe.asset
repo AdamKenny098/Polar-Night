@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6933419b267d5e4a8a131868a1cd9f0, type: 3}
+  m_Name: Entity Bait Recipe
+  m_EditorClassIdentifier: 
+  recipeName: Entity Bait
+  category: 3
+  outputItem: {fileID: 11400000, guid: aa9766a44aa33704a9ef7a181dfd82f9, type: 2}
+  outputAmount: 1
+  craftingTime: 1.5
+  ingredients:
+  - item: {fileID: 11400000, guid: af1fee6470d13b04a8ff79b8c364a24e, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 6bfbc4d8fb964d04cb0daad67377b180, type: 2}
+    amount: 1
+  description: Creates a lure that may draw unnatural movement toward a trap.

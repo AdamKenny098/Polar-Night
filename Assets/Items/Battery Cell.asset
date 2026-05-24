@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43c0140c974ebec409d0aaf9e6e58f18, type: 3}
-  m_Name: Food
+  m_Name: Battery Cell
   m_EditorClassIdentifier: 
-  itemId: rationed_meal
-  Name: Rationed Meal
-  maxStack: 10
-  icon: {fileID: 21300000, guid: 366688e45934d6f4aa56a8e15fee0d22, type: 3}
-  category: 1
-  description: A sealed emergency meal. Not pleasant, but enough to keep the body
-    moving.
+  itemId: battery_cell
+  Name: Battery Cell
+  maxStack: 20
+  icon: {fileID: 0}
+  category: 4
+  description: A small power cell. Useful for traps, containment tools, and emergency
+    devices.

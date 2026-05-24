@@ -3,55 +3,96 @@
 // Date Created: 2025-07-16
 // Description: Acts as a resource cache the player can interact with to collect random items and updates UI feedback.
 
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ResourceCache : MonoBehaviour, IInteractable
 {
-    public int resourceAmount;
+    public int resourceAmount = 1;
     public Item resourceItem;
+
+    [Header("Possible Resources")]
     public Item Food;
     public Item Fuel;
     public Item Material;
-    public Inventory playerInventory;
-    public bool resourcesDepleted = false;
 
+    [Header("References")]
+    public Inventory playerInventory;
     public Animator animator;
 
-    void Start()
+    public bool resourcesDepleted = false;
+
+    private void Start()
     {
+        GameObject player = GameObject.Find("Player");
 
-        playerInventory = GameObject.Find("Player").GetComponentInChildren<Inventory>();
-        animator = gameObject.GetComponent<Animator>();
-        int ItemRoll = Random.Range(0, 3);
+        if (player)
+        {
+            playerInventory = player.GetComponentInChildren<Inventory>();
+        }
 
-        switch (ItemRoll)
+        animator = GetComponent<Animator>();
+
+        int itemRoll = Random.Range(0, 3);
+
+        switch (itemRoll)
         {
             case 0:
                 resourceItem = Food;
                 break;
+
             case 1:
                 resourceItem = Fuel;
                 break;
+
             case 2:
                 resourceItem = Material;
-                break;
-            case 3:
-                resourceItem = null;
                 break;
         }
     }
 
     public void Interact()
     {
-        float itemsGained = 1 * GameManager.Instance.lootMult;
-        int itemsGot = Mathf.RoundToInt(itemsGained);
-
-        playerInventory.AddItem(resourceItem, itemsGot);
-        ItemPickUpUI.Instance.ShowMessage($"+{resourceAmount} {resourceItem.Name}", resourceItem.icon);
-        resourcesDepleted = true;  
         if (resourcesDepleted)
+        {
+            return;
+        }
+
+        if (!resourceItem)
+        {
+            Debug.LogWarning($"{name} has no resource item assigned.");
+            return;
+        }
+
+        if (!playerInventory)
+        {
+            Debug.LogWarning($"{name} could not find player inventory.");
+            return;
+        }
+
+        int baseAmount = Mathf.Max(1, resourceAmount);
+        float itemsGained = baseAmount * GameManager.Instance.lootMult;
+        int itemsGot = Mathf.Max(1, Mathf.RoundToInt(itemsGained));
+
+        bool added = playerInventory.AddItem(resourceItem, itemsGot);
+
+        if (!added)
+        {
+            if (ItemPickUpUI.Instance)
+            {
+                ItemPickUpUI.Instance.ShowMessage("Inventory Full", resourceItem.icon);
+            }
+
+            return;
+        }
+
+        if (ItemPickUpUI.Instance)
+        {
+            ItemPickUpUI.Instance.ShowMessage($"+{itemsGot} {resourceItem.Name}", resourceItem.icon);
+        }
+
+        resourcesDepleted = true;
+
+        if (animator)
         {
             animator.SetTrigger("ResourceCollected");
         }
@@ -61,5 +102,4 @@ public class ResourceCache : MonoBehaviour, IInteractable
     {
         Destroy(gameObject);
     }
-
 }
