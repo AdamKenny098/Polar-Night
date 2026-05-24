@@ -7,10 +7,15 @@ using UnityEngine;
 
 public class ResourceCache : MonoBehaviour, IInteractable
 {
+    [Header("Rolled Resource")]
     public int resourceAmount = 1;
     public Item resourceItem;
 
-    [Header("Possible Resources")]
+    [Header("Loot Table")]
+    public ResourceLootTable lootTable;
+    public bool rollOnStart = true;
+
+    [Header("Fallback Possible Resources")]
     public Item Food;
     public Item Fuel;
     public Item Material;
@@ -21,17 +26,53 @@ public class ResourceCache : MonoBehaviour, IInteractable
 
     public bool resourcesDepleted = false;
 
+    private int rolledAmount = 0;
+    private bool hasRolledLoot = false;
+
     private void Start()
     {
+        FindPlayerInventory();
+
+        animator = GetComponent<Animator>();
+
+        if (rollOnStart)
+        {
+            RollResource();
+        }
+    }
+
+    private void FindPlayerInventory()
+    {
         GameObject player = GameObject.Find("Player");
+
+        if (!player)
+        {
+            player = GameObject.FindGameObjectWithTag("Player");
+        }
 
         if (player)
         {
             playerInventory = player.GetComponentInChildren<Inventory>();
         }
+    }
 
-        animator = GetComponent<Animator>();
+    private void RollResource()
+    {
+        float lootMultiplier = GetLootMultiplier();
 
+        if (lootTable && lootTable.TryGetRandomLoot(lootMultiplier, out Item rolledItem, out int amount))
+        {
+            resourceItem = rolledItem;
+            rolledAmount = amount;
+            hasRolledLoot = true;
+            return;
+        }
+
+        RollFallbackResource(lootMultiplier);
+    }
+
+    private void RollFallbackResource(float lootMultiplier)
+    {
         int itemRoll = Random.Range(0, 3);
 
         switch (itemRoll)
@@ -48,6 +89,9 @@ public class ResourceCache : MonoBehaviour, IInteractable
                 resourceItem = Material;
                 break;
         }
+
+        rolledAmount = CalculateAmount(resourceAmount, lootMultiplier);
+        hasRolledLoot = true;
     }
 
     public void Interact()
@@ -55,6 +99,11 @@ public class ResourceCache : MonoBehaviour, IInteractable
         if (resourcesDepleted)
         {
             return;
+        }
+
+        if (!playerInventory)
+        {
+            FindPlayerInventory();
         }
 
         if (!resourceItem)
@@ -69,9 +118,9 @@ public class ResourceCache : MonoBehaviour, IInteractable
             return;
         }
 
-        int baseAmount = Mathf.Max(1, resourceAmount);
-        float itemsGained = baseAmount * GameManager.Instance.lootMult;
-        int itemsGot = Mathf.Max(1, Mathf.RoundToInt(itemsGained));
+        int itemsGot = hasRolledLoot
+            ? Mathf.Max(1, rolledAmount)
+            : CalculateAmount(resourceAmount, GetLootMultiplier());
 
         bool added = playerInventory.AddItem(resourceItem, itemsGot);
 
@@ -96,6 +145,24 @@ public class ResourceCache : MonoBehaviour, IInteractable
         {
             animator.SetTrigger("ResourceCollected");
         }
+    }
+
+    private int CalculateAmount(int baseAmount, float lootMultiplier)
+    {
+        int safeBaseAmount = Mathf.Max(1, baseAmount);
+        int calculatedAmount = Mathf.RoundToInt(safeBaseAmount * lootMultiplier);
+
+        return Mathf.Max(1, calculatedAmount);
+    }
+
+    private float GetLootMultiplier()
+    {
+        if (GameManager.Instance)
+        {
+            return GameManager.Instance.lootMult;
+        }
+
+        return 1f;
     }
 
     public void SelfDestruct()

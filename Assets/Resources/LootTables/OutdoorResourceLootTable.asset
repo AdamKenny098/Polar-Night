@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b976519839c15d48bf4c3dd2b79bce9, type: 3}
+  m_Name: OutdoorResourceLootTable
+  m_EditorClassIdentifier: 
+  entries:
+  - item: {fileID: 11400000, guid: 9bad9caf5e7ac684c9cb731cad631353, type: 2}
+    minAmount: 1
+    maxAmount: 2
+    weight: 12
+    affectedByLootMultiplier: 1
+  - item: {fileID: 11400000, guid: f037a577e502e6740908e2eac29cd13b, type: 2}
+    minAmount: 1
+    maxAmount: 2
+    weight: 12
+    affectedByLootMultiplier: 1
+  - item: {fileID: 11400000, guid: bb1f1977b6b95d041ba1f82dfdd55840, type: 2}
+    minAmount: 1
+    maxAmount: 3
+    weight: 14
+    affectedByLootMultiplier: 1
+  - item: {fileID: 11400000, guid: aa7c2a634d4674e4e928dbaebeb479c8, type: 2}
+    minAmount: 1
+    maxAmount: 4
+    weight: 12
+    affectedByLootMultiplier: 1
+  - item: {fileID: 11400000, guid: 1746efa3bf7c82a40ad6632877348c80, type: 2}
+    minAmount: 1
+    maxAmount: 3
+    weight: 10
+    affectedByLootMultiplier: 1
+  - item: {fileID: 11400000, guid: b8be3856249e8914294917f83e124c43, type: 2}
+    minAmount: 1
+    maxAmount: 2
+    weight: 7
+    affectedByLootMultiplier: 1
+  - item: {fileID: 11400000, guid: cfa104bfa068fa7479226b9131eb6220, type: 2}
+    minAmount: 1
+    maxAmount: 3
+    weight: 8
+    affectedByLootMultiplier: 1
+  - item: {fileID: 11400000, guid: af1fee6470d13b04a8ff79b8c364a24e, type: 2}
+    minAmount: 1
+    maxAmount: 2
+    weight: 6
+    affectedByLootMultiplier: 1
+  - item: {fileID: 11400000, guid: 6bfbc4d8fb964d04cb0daad67377b180, type: 2}
+    minAmount: 1
+    maxAmount: 1
+    weight: 4
+    affectedByLootMultiplier: 1
+  - item: {fileID: 11400000, guid: e8f0fdc1673fafd438eef2299217bb1f, type: 2}
+    minAmount: 1
+    maxAmount: 2
+    weight: 6
+    affectedByLootMultiplier: 1

@@ -122,12 +122,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   resourceAmount: 1
   resourceItem: {fileID: 0}
+  lootTable: {fileID: 11400000, guid: b7740edf59cf29742b28a1f2bf9389fe, type: 2}
+  rollOnStart: 1
   Food: {fileID: 11400000, guid: 9bad9caf5e7ac684c9cb731cad631353, type: 2}
   Fuel: {fileID: 11400000, guid: f037a577e502e6740908e2eac29cd13b, type: 2}
   Material: {fileID: 11400000, guid: bb1f1977b6b95d041ba1f82dfdd55840, type: 2}
   playerInventory: {fileID: 0}
-  resourcesDepleted: 0
   animator: {fileID: 5599465961328347438}
+  resourcesDepleted: 0
 --- !u!114 &5965613449167112207
 MonoBehaviour:
   m_ObjectHideFlags: 0
