@@ -37077,6 +37077,11 @@ MonoBehaviour:
   - FROZE
   wordDatabase: {fileID: 11400000, guid: 4dbdd0cbe9125064a8d53504b5418018, type: 2}
   defaultWordCategories: 0000000003000000
+  currentContext: 0
+  useContextCategories: 1
+  autoResolveContext: 1
+  manualContextOverride: 0
+  lowFuelThreshold: 3
   cancelInput: 0
   inventoryUI: {fileID: 1859418701}
   interactionSystem: {fileID: 142401244}

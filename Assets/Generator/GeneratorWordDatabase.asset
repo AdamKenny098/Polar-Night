@@ -15,8 +15,8 @@ MonoBehaviour:
   wordSets:
   - category: 0
     words:
-    - FUSES
     - VALVE
+    - FUSES
     - MOTOR
     - CABLE
     - WIRES
@@ -35,7 +35,6 @@ MonoBehaviour:
     - ROTOR
     - RELAY
     - INPUT
-    - TANKS
     - PLUGS
     - DRIVE
     - BRAKE
@@ -46,7 +45,6 @@ MonoBehaviour:
     - GRATE
     - LATCH
     - METER
-    - FIBER
     - CHAIN
     - WHEEL
     - SCREW
@@ -60,18 +58,16 @@ MonoBehaviour:
     - FROST
     - STORM
     - CHILL
-    - SNOWS
+    - SNOWY
     - WINDS
     - WHITE
     - POLAR
     - NORTH
-    - ARCTC
-    - GLACE
+    - GLAZE
     - FLOES
     - DRIFT
     - SLEET
     - FROZE
-    - ICEST
     - CRUST
     - SHARD
     - BRINE
@@ -87,21 +83,17 @@ MonoBehaviour:
     - HAILS
     - GUSTS
     - COVER
-    - BURRY
     - SHADE
-    - FRIGD
     - BLAST
-    - TUNDR
-    - SNARE
-    - GLAZE
     - MISTS
     - CREEK
     - BANKS
+    - ICING
+    - SNARE
   - category: 2
     words:
     - TRACE
-    - SIGNL
-    - HUMMS
+    - STAIR
     - WOUND
     - SIGIL
     - RIFTS
@@ -117,7 +109,7 @@ MonoBehaviour:
     - SPORE
     - ABYSS
     - FLESH
-    - WRAIT
+    - WRATH
     - SHADE
     - ORBIT
     - CRYPT
@@ -126,15 +118,12 @@ MonoBehaviour:
     - STARE
     - WATCH
     - NOISE
-    - WHISP
     - GLARE
     - GLOOM
-    - VANTA
     - CYCLE
     - MARKS
     - OMENS
     - BLOOM
-    - SHIFT
     - PHASE
   - category: 3
     words:
@@ -143,14 +132,11 @@ MonoBehaviour:
     - ERROR
     - PANIC
     - BREAK
-    - RELAY
     - RESET
     - POWER
     - DRAIN
     - SURGE
-    - FLOOD
     - SMOKE
-    - FIREX
     - ALERT
     - SIREN
     - LOCKS
@@ -168,13 +154,12 @@ MonoBehaviour:
     - BURST
     - STUCK
     - EMPTY
-    - LOWER
     - FINAL
-    - SCARE
-    - WORST
-    - DELAY
-    - PATCH
     - RETRY
+    - PATCH
+    - SHOCK
+    - FLARE
+    - CHAOS
   - category: 4
     words:
     - CELLS
@@ -192,20 +177,16 @@ MonoBehaviour:
     - WATCH
     - LEVEL
     - ENTRY
-    - PANEL
     - CAGES
     - BOUND
-    - CAPTR
     - SNARE
     - TRAPS
     - BAITS
     - ALLOY
     - LASER
-    - REACT
     - STUDY
     - TESTS
     - NOTES
-    - SHIFT
     - RISKS
     - INNER
     - OUTER
@@ -213,6 +194,6 @@ MonoBehaviour:
     - QUIET
     - SCOPE
     - TOWER
-    - MOTEL
-    - STARE
     - HINGE
+    - LATCH
+    - PANEL

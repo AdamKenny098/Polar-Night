@@ -27,6 +27,13 @@ public class GeneratorMinigame : MonoBehaviour
         GeneratorWordCategory.Emergency
     };
 
+    [Header("Generator Context")]
+    public GeneratorRepairContext currentContext = GeneratorRepairContext.Normal;
+    public bool useContextCategories = true;
+    public bool autoResolveContext = true;
+    public bool manualContextOverride = false;
+    public int lowFuelThreshold = 3;
+
     private string targetWord;
     private int maxGuesses = 6;
     private int currentGuess = 0;
@@ -80,6 +87,11 @@ public class GeneratorMinigame : MonoBehaviour
 
     public void StartMinigame()
     {
+        if (autoResolveContext && !manualContextOverride)
+        {
+            currentContext = ResolveContext();
+        }
+
         targetWord = ChooseTargetWord();
 
         if (string.IsNullOrWhiteSpace(targetWord))
@@ -158,10 +170,15 @@ public class GeneratorMinigame : MonoBehaviour
     {
         if (wordDatabase)
         {
-            string databaseWord = wordDatabase.GetRandomWord(5, defaultWordCategories);
+            GeneratorWordCategory[] categories = useContextCategories
+                ? GetCategoriesForContext(currentContext)
+                : defaultWordCategories;
+
+            string databaseWord = wordDatabase.GetRandomWord(5, categories);
 
             if (!string.IsNullOrWhiteSpace(databaseWord))
             {
+                Debug.Log($"Generator context: {currentContext}. Word category pool selected.");
                 return databaseWord;
             }
         }
@@ -188,10 +205,104 @@ public class GeneratorMinigame : MonoBehaviour
 
         if (validFallbackWords.Count > 0)
         {
+            Debug.LogWarning("Generator word database failed or had no valid word. Using fallback wordList.");
             return validFallbackWords[Random.Range(0, validFallbackWords.Count)];
         }
 
+        Debug.LogWarning("Generator has no valid database word or fallback word. Using emergency fallback word: FUSES.");
         return "FUSES";
+    }
+
+    private GeneratorRepairContext ResolveContext()
+    {
+        int fuelCount = GetCurrentFuelCount();
+
+        if (fuelCount <= lowFuelThreshold)
+        {
+            return GeneratorRepairContext.LowFuel;
+        }
+
+        if (GameManager.Instance && GameManager.Instance.currentStage == GameManager.DayStage.Evening)
+        {
+            return GeneratorRepairContext.Emergency;
+        }
+
+        return GeneratorRepairContext.Normal;
+    }
+
+    private int GetCurrentFuelCount()
+    {
+        if (FuelStorage.Instance)
+        {
+            return FuelStorage.Instance.CountFuelInInventory();
+        }
+
+        if (GameManager.Instance)
+        {
+            return GameManager.Instance.amountOfFuel;
+        }
+
+        return lowFuelThreshold + 1;
+    }
+
+    private GeneratorWordCategory[] GetCategoriesForContext(GeneratorRepairContext context)
+    {
+        switch (context)
+        {
+            case GeneratorRepairContext.LowFuel:
+                return new[]
+                {
+                    GeneratorWordCategory.Emergency,
+                    GeneratorWordCategory.Mechanical
+                };
+
+            case GeneratorRepairContext.Storm:
+                return new[]
+                {
+                    GeneratorWordCategory.ColdWeather,
+                    GeneratorWordCategory.Emergency
+                };
+
+            case GeneratorRepairContext.Anomaly:
+                return new[]
+                {
+                    GeneratorWordCategory.Anomaly,
+                    GeneratorWordCategory.Emergency
+                };
+
+            case GeneratorRepairContext.Containment:
+                return new[]
+                {
+                    GeneratorWordCategory.Containment,
+                    GeneratorWordCategory.Anomaly,
+                    GeneratorWordCategory.Emergency
+                };
+
+            case GeneratorRepairContext.Emergency:
+                return new[]
+                {
+                    GeneratorWordCategory.Emergency,
+                    GeneratorWordCategory.Mechanical
+                };
+
+            default:
+                return new[]
+                {
+                    GeneratorWordCategory.Mechanical,
+                    GeneratorWordCategory.Emergency
+                };
+        }
+    }
+
+    public void SetRepairContext(GeneratorRepairContext context, bool lockContext = true)
+    {
+        currentContext = context;
+        manualContextOverride = lockContext;
+    }
+
+    public void ClearRepairContextOverride()
+    {
+        manualContextOverride = false;
     }
 
     private void PassMinigame()
