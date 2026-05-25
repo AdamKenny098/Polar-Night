@@ -34,6 +34,13 @@ public class GeneratorMinigame : MonoBehaviour
     public bool manualContextOverride = false;
     public int lowFuelThreshold = 3;
 
+    [Header("Sticky Note Board")]
+    public bool populateStickyNoteBoard = true;
+    public int falseBoardWordCount = 5;
+
+    [Header("Prepared Generator Round")]
+    public bool roundPrepared;
+
     private string targetWord;
     private int maxGuesses = 6;
     private int currentGuess = 0;
@@ -75,24 +82,41 @@ public class GeneratorMinigame : MonoBehaviour
 
         if (cancelInput)
         {
-            if (interactionSystem)
-            {
-                interactionSystem.enabled = false;
-            }
-
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
     }
 
-    public void StartMinigame()
+    public void PrepareRound()
     {
+        if (roundPrepared)
+        {
+            return;
+        }
+
         if (autoResolveContext && !manualContextOverride)
         {
             currentContext = ResolveContext();
         }
 
         targetWord = ChooseTargetWord();
+
+        if (populateStickyNoteBoard)
+        {
+            PopulateStickyNoteBoard();
+        }
+
+        roundPrepared = true;
+
+        Debug.Log($"Generator round prepared. Context: {currentContext}");
+    }
+
+    public void StartMinigame()
+    {
+        if (!roundPrepared)
+        {
+            PrepareRound();
+        }
 
         if (string.IsNullOrWhiteSpace(targetWord))
         {
@@ -104,6 +128,8 @@ public class GeneratorMinigame : MonoBehaviour
 
         PauseMenu.Instance.SetIsPaused(true);
         cancelInput = true;
+        LockInteractionInput();
+
         HUDManager.Instance.ShowGeneratorHUD();
 
         currentGuess = 0;
@@ -124,6 +150,11 @@ public class GeneratorMinigame : MonoBehaviour
 
     public void OnSubmitGuess()
     {
+        if (!isActive || string.IsNullOrWhiteSpace(targetWord))
+        {
+            return;
+        }
+
         string guess = inputField.text.Trim().ToUpperInvariant();
 
         if (guess.Length != 5)
@@ -319,9 +350,11 @@ public class GeneratorMinigame : MonoBehaviour
         }
 
         GameManager.Instance.AdvanceStage();
-        GameManager.Instance.successfulMaintenance++;
+        ResetPreparedRound();
 
+        GameManager.Instance.successfulMaintenance++;
         GameManager.Instance.hasMaintainedGenerators = true;
+
         DayStageUI.Instance.UpdateStageDisplay(GameManager.Instance.currentStage);
     }
 
@@ -349,8 +382,10 @@ public class GeneratorMinigame : MonoBehaviour
         }
 
         GameManager.Instance.AdvanceStage();
+        ResetPreparedRound();
 
         GameManager.Instance.hasMaintainedGenerators = true;
+
         DayStageUI.Instance.UpdateStageDisplay(GameManager.Instance.currentStage);
     }
 
@@ -363,20 +398,133 @@ public class GeneratorMinigame : MonoBehaviour
     private void EndMinigameInputLock()
     {
         cancelInput = false;
+        isActive = false;
 
         HUDManager.Instance.ShowDefaultHUD();
-        isActive = false;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         Time.timeScale = 1f;
 
-        if (interactionSystem)
-        {
-            interactionSystem.enabled = true;
-        }
-
         PauseMenu.Instance.SetIsPaused(false);
         HUDManager.Instance.InventoryLocked = false;
+
+        UnlockInteractionInput();
+    }
+
+    private void LockInteractionInput()
+    {
+        InteractSystem.SetInputLocked(true);
+    }
+
+    private void UnlockInteractionInput()
+    {
+        InteractSystem.SetInputLocked(false, 0.35f);
+    }
+
+    private void PopulateStickyNoteBoard()
+    {
+        if (!GeneratorStickyNoteBoard.Instance)
+        {
+            Debug.LogWarning("No GeneratorStickyNoteBoard found in the scene.");
+            return;
+        }
+
+        List<string> falseWords = GetFalseBoardWords();
+
+        GeneratorStickyNoteBoard.Instance.FillBoard(targetWord, falseWords);
+    }
+
+    private List<string> GetFalseBoardWords()
+    {
+        List<string> falseWords = new List<string>();
+
+        if (wordDatabase)
+        {
+            GeneratorWordCategory[] categories = useContextCategories
+                ? GetCategoriesForContext(currentContext)
+                : defaultWordCategories;
+
+            List<string> possibleWords = wordDatabase.GetWords(5, categories);
+
+            for (int i = 0; i < possibleWords.Count; i++)
+            {
+                string word = possibleWords[i].Trim().ToUpperInvariant();
+
+                if (word == targetWord)
+                {
+                    continue;
+                }
+
+                if (falseWords.Contains(word))
+                {
+                    continue;
+                }
+
+                falseWords.Add(word);
+            }
+        }
+
+        if (wordList != null)
+        {
+            for (int i = 0; i < wordList.Length; i++)
+            {
+                if (string.IsNullOrWhiteSpace(wordList[i]))
+                {
+                    continue;
+                }
+
+                string word = wordList[i].Trim().ToUpperInvariant();
+
+                if (word.Length != 5)
+                {
+                    continue;
+                }
+
+                if (word == targetWord)
+                {
+                    continue;
+                }
+
+                if (falseWords.Contains(word))
+                {
+                    continue;
+                }
+
+                falseWords.Add(word);
+            }
+        }
+
+        ShuffleWords(falseWords);
+
+        if (falseWords.Count > falseBoardWordCount)
+        {
+            falseWords.RemoveRange(falseBoardWordCount, falseWords.Count - falseBoardWordCount);
+        }
+
+        return falseWords;
+    }
+
+    private void ShuffleWords(List<string> words)
+    {
+        for (int i = 0; i < words.Count; i++)
+        {
+            int randomIndex = Random.Range(i, words.Count);
+
+            string temp = words[i];
+            words[i] = words[randomIndex];
+            words[randomIndex] = temp;
+        }
+    }
+
+    public void ResetPreparedRound()
+    {
+        roundPrepared = false;
+        targetWord = "";
+
+        if (GeneratorStickyNoteBoard.Instance)
+        {
+            GeneratorStickyNoteBoard.Instance.ClearBoard();
+        }
     }
 }

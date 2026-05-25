@@ -3,117 +3,192 @@
 // Date Created: 2025-07-16
 // Description: Interactable front door that manages entering/exiting the building, saving/loading inventories, and scene transitions.
 
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class FrontDoor : MonoBehaviour, IInteractable
 {
+    [Header("Inventories")]
     public Inventory playerInventory;
-    public Inventory fridgeInventory;       // Optional, only in some scenes
-    public Inventory fuelStoreInventory;    // Optional, only in some scenes
+    public Inventory fridgeInventory;
+    public Inventory fuelStoreInventory;
 
-    public GameObject inventoryManager; // Reference to the InventoryManager GameObject
-
+    [Header("Audio")]
     public AudioSource doorAudio;
     public AudioClip doorOpenClip;
 
+    [Header("Debug")]
+    public bool debugDoor = true;
+
     private string currentSceneName;
 
-    // Initializes inventory references and loads data at the start.
-    void Start()
+    private void Start()
     {
         currentSceneName = SceneManager.GetActiveScene().name;
-        inventoryManager = GameObject.Find("InventoryManager");
-        playerInventory = GameManager.Instance.playerInventory;
 
-        // Always try loading the player inventory
+        ResolveInventories();
+        LoadRelevantInventories();
+    }
+
+    public void Interact()
+    {
+        if (debugDoor)
+        {
+            Debug.Log($"[FrontDoor] Interact called. Scene={currentSceneName}, hasGoneOutside={GameManager.Instance.hasGoneOutside}");
+        }
+
+        if (currentSceneName == "Outside")
+        {
+            PlayDoorAudio();
+            ReturnToBase();
+            return;
+        }
+
+        if (currentSceneName == "Inside")
+        {
+            TryGoOutside();
+            return;
+        }
+
+        Debug.LogWarning($"[FrontDoor] Unsupported scene: {currentSceneName}");
+    }
+
+    private void ResolveInventories()
+    {
+        if (GameManager.Instance && GameManager.Instance.playerInventory)
+        {
+            playerInventory = GameManager.Instance.playerInventory;
+        }
+
+        if (!playerInventory)
+        {
+            GameObject player = GameObject.Find("Player");
+
+            if (player)
+            {
+                playerInventory = player.GetComponentInChildren<Inventory>();
+            }
+        }
+    }
+
+    private void LoadRelevantInventories()
+    {
+        if (!GameManager.Instance)
+        {
+            Debug.LogWarning("[FrontDoor] No GameManager found.");
+            return;
+        }
+
         if (playerInventory)
         {
             GameManager.Instance.LoadInventory(playerInventory, GameManager.Instance.playerInventoryData);
         }
-
-        // Only try loading fridge/fuel if in the correct scene
-        if (currentSceneName == "Inside")
+        else
         {
-            if (fridgeInventory)
-            {
-                GameManager.Instance.LoadInventory(fridgeInventory, GameManager.Instance.fridgeInventoryData);
-            }
+            Debug.LogWarning("[FrontDoor] No player inventory assigned/found.");
+        }
 
-            if (fuelStoreInventory && GameManager.Instance.fuelStoreInventoryData != null)
-            {
-                GameManager.Instance.LoadInventory(fuelStoreInventory, GameManager.Instance.fuelStoreInventoryData);
-            }
-        } 
-
-        if (!playerInventory || !fridgeInventory || !fuelStoreInventory)
+        if (currentSceneName != "Inside")
         {
             return;
         }
 
-        // Load inventories from GameManager
-        GameManager.Instance.LoadInventory(playerInventory, GameManager.Instance.playerInventoryData);
-        GameManager.Instance.LoadInventory(fridgeInventory, GameManager.Instance.fridgeInventoryData);
+        if (fridgeInventory)
+        {
+            GameManager.Instance.LoadInventory(fridgeInventory, GameManager.Instance.fridgeInventoryData);
+        }
+        else if (debugDoor)
+        {
+            Debug.Log("[FrontDoor] No fridge inventory assigned. Skipping fridge load.");
+        }
 
-        if (GameManager.Instance.fuelStoreInventoryData != null)
+        if (fuelStoreInventory && GameManager.Instance.fuelStoreInventoryData != null)
         {
             GameManager.Instance.LoadInventory(fuelStoreInventory, GameManager.Instance.fuelStoreInventoryData);
         }
-        else
+        else if (debugDoor)
         {
+            Debug.Log("[FrontDoor] No fuel storage inventory data or inventory assigned. Skipping fuel load.");
+        }
+    }
+
+    private void TryGoOutside()
+    {
+        if (!GameManager.Instance)
+        {
+            Debug.LogWarning("[FrontDoor] Cannot go outside. GameManager missing.");
             return;
         }
-    }
 
-    // Handles player interaction with the front door for entering/exiting.
-    public void Interact()
-    {
-        if (currentSceneName == "Outside")
+        if (GameManager.Instance.hasGoneOutside)
         {
-            doorAudio.PlayOneShot(doorOpenClip);
-            fuelStoreInventory = null;
-            fridgeInventory = null;
+            if (debugDoor)
+            {
+                Debug.Log("[FrontDoor] Door blocked. Player has already gone outside this cycle.");
+            }
 
-            ReturnToBase();
+            return;
         }
-        else if (currentSceneName == "Inside")
+
+        if (!playerInventory)
         {
-            if (GameManager.Instance.hasGoneOutside)
-            {
-                return;
-            }
-            else
-            {
-                doorAudio.PlayOneShot(doorOpenClip);
-                GameManager.Instance.playerInventoryData = GameManager.Instance.SaveInventory(playerInventory);
-                GameManager.Instance.fridgeInventoryData = GameManager.Instance.SaveInventory(fridgeInventory);
-                GameManager.Instance.fuelStoreInventoryData = GameManager.Instance.SaveInventory(fuelStoreInventory);
-
-                // Load the Outside scene and set the flag to true
-                SceneManager.LoadScene("Outside");
-                GameManager.Instance.hasGoneOutside = true; // Set the flag to true when going outside
-            }
+            Debug.LogWarning("[FrontDoor] Cannot go outside. Player inventory missing.");
+            return;
         }
-    }
 
-    // Handles logic for returning inside from outside.
-    private void ReturnToBase()
-    {
-        // Save inventory before leaving
+        PlayDoorAudio();
+
         GameManager.Instance.playerInventoryData = GameManager.Instance.SaveInventory(playerInventory);
 
+        if (fridgeInventory)
+        {
+            GameManager.Instance.fridgeInventoryData = GameManager.Instance.SaveInventory(fridgeInventory);
+        }
+
+        if (fuelStoreInventory)
+        {
+            GameManager.Instance.fuelStoreInventoryData = GameManager.Instance.SaveInventory(fuelStoreInventory);
+        }
+
+        GameManager.Instance.hasGoneOutside = true;
+
+        SceneManager.LoadScene("Outside");
+    }
+
+    private void ReturnToBase()
+    {
+        if (!GameManager.Instance)
+        {
+            Debug.LogWarning("[FrontDoor] Cannot return to base. GameManager missing.");
+            return;
+        }
+
+        if (playerInventory)
+        {
+            GameManager.Instance.playerInventoryData = GameManager.Instance.SaveInventory(playerInventory);
+        }
+        else
+        {
+            Debug.LogWarning("[FrontDoor] Returning without saving player inventory because it is missing.");
+        }
+
         ScavengeTimer timer = FindObjectOfType<ScavengeTimer>();
+
         if (timer)
         {
             timer.PlayerReturnedToBase();
         }
 
-        // Advance to evening phase
         GameManager.Instance.AdvanceStage();
 
-        // Load back inside
         SceneManager.LoadScene("Inside");
+    }
+
+    private void PlayDoorAudio()
+    {
+        if (doorAudio && doorOpenClip)
+        {
+            doorAudio.PlayOneShot(doorOpenClip);
+        }
     }
 }
