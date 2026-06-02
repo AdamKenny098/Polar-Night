@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 2830094032175888954}
   - component: {fileID: 303991114687097798}
   - component: {fileID: 4132778947846938951}
+  - component: {fileID: 5491246904576972080}
   m_Layer: 0
   m_Name: SnowEntity
   m_TagString: Untagged
@@ -147,6 +148,9 @@ MonoBehaviour:
   wanderRadius: 12
   hasTargetPosition: 0
   currentTargetPosition: {x: 0, y: 0, z: 0}
+  currentBaitTarget: {fileID: 0}
+  baitSearchRadius: 22
+  baitConsumeDistance: 1.25
   capturedByTrap: {fileID: 0}
   captureTarget: {fileID: 2830094032175888954}
   debugEntity: 1
@@ -167,6 +171,41 @@ MonoBehaviour:
   reachedDistance: 0.75
   wanderSampleAttempts: 12
   debugBridge: 0
+--- !u!114 &5491246904576972080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5770556095078660807}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46d57539a623e8849984dbcc48852fe1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EntityEvidenceTrailEmitter
+  context: {fileID: 303991114687097798}
+  evidencePrefabs:
+  - prefab: {fileID: 861738369858551764, guid: 583b4d3b805e412488b67e37cc679b9d, type: 3}
+    weight: 8
+  - prefab: {fileID: 7489834474034953293, guid: c78c4d2ca7baf1a40808e9f8e08ae782, type: 3}
+    weight: 3
+  - prefab: {fileID: 2680411477121407609, guid: f82b44071ef6db74da4fbad06a5f1d6c, type: 3}
+    weight: 1
+  footprintPrefab: {fileID: 861738369858551764, guid: 583b4d3b805e412488b67e37cc679b9d, type: 3}
+  emitEvidence: 1
+  emitInterval: 1.25
+  minMoveDistance: 0.75
+  maxActiveMarkers: 45
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  raycastHeight: 0.1
+  raycastDistance: 5
+  surfaceOffset: 0.025
+  sideOffset: 0.22
+  backOffset: 0.35
+  randomYaw: 8
+  debugEmitter: 0
 --- !u!1 &8504298318017095827
 GameObject:
   m_ObjectHideFlags: 0
