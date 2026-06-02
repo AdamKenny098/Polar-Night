@@ -103,6 +103,74 @@ public class SnowEntityBehaviourBridge : MonoBehaviour
         return false;
     }
 
+    public bool FindNearestBaitTarget()
+    {
+        if (!context)
+        {
+            return false;
+        }
+
+        if (context.isCaptured)
+        {
+            return false;
+        }
+
+        if (EntityBaitRegistry.TryGetNearestBait(
+                transform.position,
+                context.baitSearchRadius,
+                out PlacedEntityBait bait
+            ))
+        {
+            context.SetBaitTarget(bait);
+
+            if (debugBridge)
+            {
+                Debug.Log($"[SnowEntityBehaviourBridge] Found bait target: {bait.name}");
+            }
+
+            return true;
+        }
+
+        context.ClearBaitTarget();
+
+        return false;
+    }
+
+    public bool HasBaitTarget()
+    {
+        return context && context.HasValidBaitTarget();
+    }
+
+    public bool ConsumeBaitIfReached()
+    {
+        if (!context || !context.HasValidBaitTarget())
+        {
+            return false;
+        }
+
+        float distance = Vector3.Distance(
+            transform.position,
+            context.currentBaitTarget.GetAttractionPosition()
+        );
+
+        if (distance > context.baitConsumeDistance)
+        {
+            return false;
+        }
+
+        context.currentBaitTarget.ConsumeBait();
+
+        if (debugBridge)
+        {
+            Debug.Log($"[SnowEntityBehaviourBridge] Consumed bait: {context.currentBaitTarget.name}");
+        }
+
+        context.ClearBaitTarget();
+        context.ClearTargetPosition();
+
+        return true;
+    }
+
     public bool MoveToCurrentTarget()
     {
         if (!CanMove())

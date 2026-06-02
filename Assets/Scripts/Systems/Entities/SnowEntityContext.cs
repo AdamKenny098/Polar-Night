@@ -16,6 +16,11 @@ public class SnowEntityContext : MonoBehaviour, ITrapCaptureResponder
     public bool hasTargetPosition;
     public Vector3 currentTargetPosition;
 
+    [Header("Bait")]
+    public PlacedEntityBait currentBaitTarget;
+    public float baitSearchRadius = 22f;
+    public float baitConsumeDistance = 1.25f;
+
     [Header("Capture")]
     public PlacedSnowTrap capturedByTrap;
     public TrapCaptureTarget captureTarget;
@@ -60,6 +65,26 @@ public class SnowEntityContext : MonoBehaviour, ITrapCaptureResponder
         currentTargetPosition = Vector3.zero;
     }
 
+    public void SetBaitTarget(PlacedEntityBait bait)
+    {
+        currentBaitTarget = bait;
+
+        if (bait)
+        {
+            SetTargetPosition(bait.GetAttractionPosition());
+        }
+    }
+
+    public void ClearBaitTarget()
+    {
+        currentBaitTarget = null;
+    }
+
+    public bool HasValidBaitTarget()
+    {
+        return currentBaitTarget && currentBaitTarget.CanAttractEntity();
+    }
+
     public void SetCanMove(bool value)
     {
         canMove = value;
@@ -73,6 +98,7 @@ public class SnowEntityContext : MonoBehaviour, ITrapCaptureResponder
         capturedByTrap = trap;
 
         ClearTargetPosition();
+        ClearBaitTarget();
         StopMovement();
 
         if (debugEntity)
